@@ -79,7 +79,7 @@ pygame.init()
 
 
 # set frames per second
-FPS = 60
+FPS = 15
 FramePerSec = pygame.time.Clock()
 
 
@@ -139,7 +139,8 @@ current_mode = "classic" # or "face"
 # initialise score
 score = 0
 
-
+# before playing the snake can't move
+snake_can_move = False
 
 
 
@@ -153,12 +154,17 @@ CLASSES
 """
 
 class Snake:
-	def __init__(self, coords):
+	def __init__(self, coords, x_direction, y_direction):
 		"""
+		x_direction (int): direction of snake on x axis. Ex: x_direction = 20 (means snake is moving to the right)
+		y_direction (int): direction of snake on y axis. Ex: x_direction = 0 (means snake is moving horizontally)
 		coords (list of (int,int)): coordinates of snake
 		"""
 		super(Snake, self).__init__()
+		self.x_direction = x_direction
+		self.y_direction = y_direction
 		self.coords = coords
+
 
 	def show(self):
 		"""
@@ -167,6 +173,85 @@ class Snake:
 		for x,y in self.coords:
 			# add segment to screen
 			pygame.draw.rect(WINDOW,BLUE,[x,y,20,20])
+
+
+	def move(self):
+		"""
+		method to move the snake one space
+		"""
+		# define position of new head of snake
+		new_head = (self.coords[0][0] + self.x_direction, self.coords[0][1] + self.y_direction)
+
+		# add new head to snake
+		self.coords.insert(0,new_head)
+
+		# remove tail
+		self.coords.pop()
+
+
+	def change_direction_with_keys(self,event):
+		"""
+		method to change direction of snake
+		input: event: key pressed
+		ouput (None)
+		"""
+
+		# determine the actual direction of the snake
+		going_left = self.x_direction == -20;
+		going_right = self.x_direction == 20;
+		going_up = self.y_direction == -20;
+		going_down = self.y_direction == 20;
+
+	  	# want to go left
+		if event.key == pygame.K_LEFT:
+			# only possible if we're not moving horizontally
+			if (not going_left) and (not going_right):
+				# set direction to left
+				self.x_direction = -20
+				self.y_direction = 0
+
+		# want to go right
+		elif event.key == pygame.K_RIGHT:
+			# only possible if we're not moving horizontally
+			if (not going_left) and (not going_right):
+				# set direction to left
+				self.x_direction = 20
+				self.y_direction = 0
+				
+		# want to go up
+		elif event.key == pygame.K_UP:
+			# only possible if we're not moving vertically
+			if (not going_up) and (not going_down):
+				# set direction to up
+				self.x_direction = 0
+				self.y_direction = -20 # ATTENTION
+				
+		# want to go down
+		elif event.key == pygame.K_DOWN:
+			# only possible if we're not moving vertically
+			if (not going_up) and (not going_down):
+				# set direction to down
+				self.x_direction = 0
+				self.y_direction = 20 # ATTENTION
+
+
+	def died(self):
+		"""
+		method to check if snake died
+		output (boolean)
+		"""
+		return self.hit_wall() # or ...
+
+
+	def hit_wall(self):
+		"""
+		method to check if hit wall
+		ouput (boolean)
+		"""
+		return self.coords[0][0] >= 700 + 100 or self.coords[0][0] <= 100 or self.coords[0][1] >= 700 + 80 or self.coords[0][1] <= 80
+
+
+
 
 
 class Apple:
@@ -247,6 +332,7 @@ def mouse_hover_over_btn(button, mouse_x,mouse_y):
 	elif button == "mode":
 		return WINDOW_WIDTH/2+140 <= mouse_x <= (WINDOW_WIDTH/2+140)+200 and WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE <= mouse_y <= (WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE)+50
 
+
 def change_btn_shade_on_hover(button, mouse_x, mouse_y):
 	"""
 	inputs: button:  (str) which button ("play" for example)
@@ -282,9 +368,13 @@ def generate_apple_coords():
 	output (tuple of (int, int)) : random point on grid for apple
 	"""
 	apple_coords = generate_random_coords()
+	if apple_coords in snake.coords:
+		generate_apple_coords()
+	else:
+		return apple_coords
 
 
-
+			
 
 
 """
@@ -292,19 +382,11 @@ OTHER INITS
 """
 
 # init snake
-snake = Snake([(400,400),(410,400)])
+snake = Snake([(420,400),(400,400)],20,0)
+#				head      tail		x  y (direction)
 
 # init apple
 apple = Apple(generate_random_coords())
-
-
-
-
-
-
-
-
-
 
 
 
@@ -313,6 +395,10 @@ GAME LOOP
 """
 
 while True:
+
+	# every timestep resets the number of desired changes to direction
+	# (this gets incremented every timestep)
+    nb_desired_changes = 0
 
     # check events
     for event in pygame.event.get():
@@ -332,6 +418,8 @@ while True:
 
             # if press play btn start game
         	# if we're playing, disable p (even make btn look disabled)
+            if mouse_hover_over_btn("play", mouse_x, mouse_y):
+                snake_can_move = True
 
         	# if press mode button change mode
         	# disable m during gameplay
@@ -345,6 +433,13 @@ while True:
 
         		# increment m_count
                 m_count += 1
+
+        # key pressed
+        if event.type == pygame.KEYDOWN and snake_can_move:
+        	# want to change directio so add 1 (if it passes 1 then change_direction is disabled)
+        	nb_desired_changes += 1
+        	if nb_desired_changes == 1:
+        		snake.change_direction_with_keys(event)
         	
 
   
@@ -359,6 +454,24 @@ while True:
     show_score(score)
     snake.show()
     apple.show()
+
+    if snake_can_move:
+        snake.move()
+
+    # snake dies
+    if snake.died():
+    	# reset snake
+    	del snake
+    	snake = Snake([(420,400),(400,400)],20,0)
+    	snake_can_move = False
+
+    	# reset apple
+    	del apple
+    	apple = Apple(generate_random_coords())
+
+ 
+
+
 
     # update the game frames
     pygame.display.update()
