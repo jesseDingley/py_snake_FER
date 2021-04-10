@@ -157,7 +157,7 @@ class Snake:
 	def __init__(self, coords, x_direction, y_direction):
 		"""
 		x_direction (int): direction of snake on x axis. Ex: x_direction = 20 (means snake is moving to the right)
-		y_direction (int): direction of snake on y axis. Ex: x_direction = 0 (means snake is moving horizontally)
+		y_direction (int): direction of snake on y axis. Ex: y_direction = 0 (means snake is moving horizontally)
 		coords (list of (int,int)): coordinates of snake
 		"""
 		super(Snake, self).__init__()
@@ -185,8 +185,30 @@ class Snake:
 		# add new head to snake
 		self.coords.insert(0,new_head)
 
-		# remove tail
-		self.coords.pop()
+		global apple
+		global score
+		# different scenarios
+		try:
+			ate_apple = self.coords[0][0] == apple.coords[0] and self.coords[0][1] == apple.coords[1]
+		except:
+			ate_apple = False
+
+		if ate_apple:
+			# then dont remove tail because the snake ate an apple
+
+			# increment score by 1
+			# erase_score()
+			score += 1
+
+			# delete apple
+			del apple
+
+			# create new one
+			apple = Apple(generate_apple_coords())
+
+		else:		
+			# remove tail
+			self.coords.pop()
 
 
 	def change_direction_with_keys(self,event):
@@ -248,7 +270,7 @@ class Snake:
 		method to check if hit wall
 		ouput (boolean)
 		"""
-		return self.coords[0][0] >= 700 + 100 or self.coords[0][0] <= 100 or self.coords[0][1] >= 700 + 80 or self.coords[0][1] <= 80
+		return self.coords[0][0] >= 700 + 100 or self.coords[0][0] < 100 or self.coords[0][1] >= 700 + 80 or self.coords[0][1] < 80
 
 
 
@@ -352,8 +374,15 @@ def show_score(score):
 	input: score: (int) the current score
 	output: (None) show the current score
 	"""
+	pygame.draw.rect(WINDOW,GREEN,[WINDOW_WIDTH/2-60+80,30,100,50])
 	score_text = BTN_FONT.render(f'Score: {score}', True, BLACK)
 	WINDOW.blit(score_text, (WINDOW_WIDTH/2-60,40))
+
+
+# def erase_score():
+# 	"""
+# 	output (None): erase score so the new scores wont write on top of the old scores
+# 	"""
 
 
 def generate_random_coords():
@@ -383,11 +412,10 @@ OTHER INITS
 
 # init snake
 snake = Snake([(420,400),(400,400)],20,0)
-#				head      tail		x  y (direction)
+#				head      tail		x  y (init direction)
 
 # init apple
-apple = Apple(generate_random_coords())
-
+apple = Apple(generate_apple_coords())
 
 
 """
@@ -450,11 +478,17 @@ while True:
     for button in buttons:
     	change_btn_shade_on_hover(button, mouse_x, mouse_y)
 
+    # draw grid
     draw_playing_grid()
+
+    # show score
     show_score(score)
+
+    # draw snake and apple
     snake.show()
     apple.show()
 
+    # chekck if snake can move (i.e. when "play" is pressed)
     if snake_can_move:
         snake.move()
 
@@ -467,7 +501,10 @@ while True:
 
     	# reset apple
     	del apple
-    	apple = Apple(generate_random_coords())
+    	apple = Apple(generate_apple_coords())
+
+    	# reinit score
+    	score = 0
 
  
 
