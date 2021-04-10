@@ -26,7 +26,12 @@ from pygame.locals import *
 # random
 from random import randrange
 
+# writing best score inside a file not accessible by the user
+import shelve
 
+# for determining if the file "best_score" already exists or not
+import os.path
+from os import path
 
 
 
@@ -50,7 +55,7 @@ game coordinates:
 |
 |
 |
-|				(n,n)
+|               (n,n)
 +-------------------+
 
 rect[x(width) ,y(height),rect_width,rect_height]
@@ -154,148 +159,152 @@ CLASSES
 """
 
 class Snake:
-	def __init__(self, coords, x_direction, y_direction):
-		"""
-		x_direction (int): direction of snake on x axis. Ex: x_direction = 20 (means snake is moving to the right)
-		y_direction (int): direction of snake on y axis. Ex: y_direction = 0 (means snake is moving horizontally)
-		coords (list of (int,int)): coordinates of snake
-		"""
-		super(Snake, self).__init__()
-		self.x_direction = x_direction
-		self.y_direction = y_direction
-		self.coords = coords
+    def __init__(self, coords, x_direction, y_direction):
+        """
+        x_direction (int): direction of snake on x axis. Ex: x_direction = 20 (means snake is moving to the right)
+        y_direction (int): direction of snake on y axis. Ex: y_direction = 0 (means snake is moving horizontally)
+        coords (list of (int,int)): coordinates of snake
+        """
+        super(Snake, self).__init__()
+        self.x_direction = x_direction
+        self.y_direction = y_direction
+        self.coords = coords
 
 
-	def show(self):
-		"""
-		method to show / draw snake on screen
-		"""
-		for x,y in self.coords:
-			# add segment to screen
-			pygame.draw.rect(WINDOW,BLUE,[x,y,20,20])
+    def show(self):
+        """
+        method to show / draw snake on screen
+        """
+        for x,y in self.coords:
+            # add segment to screen
+            pygame.draw.rect(WINDOW,BLUE,[x,y,20,20])
 
 
-	def move(self):
-		"""
-		method to move the snake one space
-		"""
-		# define position of new head of snake
-		new_head = (self.coords[0][0] + self.x_direction, self.coords[0][1] + self.y_direction)
+    def move(self):
+        """
+        method to move the snake one space
+        """
+        # define position of new head of snake
+        new_head = (self.coords[0][0] + self.x_direction, self.coords[0][1] + self.y_direction)
 
-		# add new head to snake
-		self.coords.insert(0,new_head)
+        # add new head to snake
+        self.coords.insert(0,new_head)
 
-		global apple
-		global score
-		# different scenarios
-		try:
-			ate_apple = self.coords[0][0] == apple.coords[0] and self.coords[0][1] == apple.coords[1]
-		except:
-			ate_apple = False
+        global apple
+        global score
+        global best_score
+        # different scenarios
+        try:
+            ate_apple = self.coords[0][0] == apple.coords[0] and self.coords[0][1] == apple.coords[1]
+        except:
+            ate_apple = False
 
-		if ate_apple:
-			# then dont remove tail because the snake ate an apple
+        if ate_apple:
+            # then dont remove tail because the snake ate an apple
 
-			# increment score by 1
-			# erase_score()
-			score += 1
+            # increment score by 1
+            # erase_score()
+            score += 1
 
-			# delete apple
-			del apple
+            # recalculate the best score
+            best_score = max(score, best_score)
 
-			# create new one
-			apple = Apple(generate_apple_coords())
+            # delete apple
+            del apple
 
-		else:		
-			# remove tail
-			self.coords.pop()
+            # create new one
+            apple = Apple(generate_apple_coords())
 
-
-	def change_direction_with_keys(self,event):
-		"""
-		method to change direction of snake
-		input: event: key pressed
-		ouput (None)
-		"""
-
-		# determine the actual direction of the snake
-		going_left = self.x_direction == -20;
-		going_right = self.x_direction == 20;
-		going_up = self.y_direction == -20;
-		going_down = self.y_direction == 20;
-
-	  	# want to go left
-		if event.key == pygame.K_LEFT:
-			# only possible if we're not moving horizontally
-			if (not going_left) and (not going_right):
-				# set direction to left
-				self.x_direction = -20
-				self.y_direction = 0
-
-		# want to go right
-		elif event.key == pygame.K_RIGHT:
-			# only possible if we're not moving horizontally
-			if (not going_left) and (not going_right):
-				# set direction to left
-				self.x_direction = 20
-				self.y_direction = 0
-				
-		# want to go up
-		elif event.key == pygame.K_UP:
-			# only possible if we're not moving vertically
-			if (not going_up) and (not going_down):
-				# set direction to up
-				self.x_direction = 0
-				self.y_direction = -20 # ATTENTION
-				
-		# want to go down
-		elif event.key == pygame.K_DOWN:
-			# only possible if we're not moving vertically
-			if (not going_up) and (not going_down):
-				# set direction to down
-				self.x_direction = 0
-				self.y_direction = 20 # ATTENTION
+        else:       
+            # remove tail
+            self.coords.pop()
 
 
-	def died(self):
-		"""
-		method to check if snake died
-		output (boolean)
-		"""
-		return self.hit_wall() or self.hit_self() # or ...
+    def change_direction_with_keys(self,event):
+        """
+        method to change direction of snake
+        input: event: key pressed
+        ouput (None)
+        """
+
+        # determine the actual direction of the snake
+        going_left = self.x_direction == -20;
+        going_right = self.x_direction == 20;
+        going_up = self.y_direction == -20;
+        going_down = self.y_direction == 20;
+
+        # want to go left
+        if event.key == pygame.K_LEFT:
+            # only possible if we're not moving horizontally
+            if (not going_left) and (not going_right):
+                # set direction to left
+                self.x_direction = -20
+                self.y_direction = 0
+
+        # want to go right
+        elif event.key == pygame.K_RIGHT:
+            # only possible if we're not moving horizontally
+            if (not going_left) and (not going_right):
+                # set direction to left
+                self.x_direction = 20
+                self.y_direction = 0
+                
+        # want to go up
+        elif event.key == pygame.K_UP:
+            # only possible if we're not moving vertically
+            if (not going_up) and (not going_down):
+                # set direction to up
+                self.x_direction = 0
+                self.y_direction = -20 # ATTENTION
+                
+        # want to go down
+        elif event.key == pygame.K_DOWN:
+            # only possible if we're not moving vertically
+            if (not going_up) and (not going_down):
+                # set direction to down
+                self.x_direction = 0
+                self.y_direction = 20 # ATTENTION
 
 
-	def hit_wall(self):
-		"""
-		method to check if hit wall
-		ouput (boolean)
-		"""
-		return self.coords[0][0] >= 700 + 100 or self.coords[0][0] < 100 or self.coords[0][1] >= 700 + 80 or self.coords[0][1] < 80
+    def died(self):
+        """
+        method to check if snake died
+        output (boolean)
+        """
+        return self.hit_wall() or self.hit_self() # or ...
 
 
-	def hit_self(self):
-		"""
-		method to check if hit self
-		"""
-		return self.coords[0] in self.coords[1:]
+    def hit_wall(self):
+        """
+        method to check if hit wall
+        ouput (boolean)
+        """
+        return self.coords[0][0] >= 700 + 100 or self.coords[0][0] < 100 or self.coords[0][1] >= 700 + 80 or self.coords[0][1] < 80
+
+
+    def hit_self(self):
+        """
+        method to check if hit self
+        """
+        return self.coords[0] in self.coords[1:]
 
 
 
 
 class Apple:
-	def __init__(self, coords):
-		"""
-		coords: (tuple of (int,int)): coordinates of apple
-		"""
-		super(Apple, self).__init__()
-		self.coords = coords
+    def __init__(self, coords):
+        """
+        coords: (tuple of (int,int)): coordinates of apple
+        """
+        super(Apple, self).__init__()
+        self.coords = coords
 
-	def show(self):
-		"""
-		method to show / draw apple on screen
-		"""
-		x, y = self.coords
-		pygame.draw.rect(WINDOW,RED,[x,y,20,20])
+    def show(self):
+        """
+        method to show / draw apple on screen
+        """
+        x, y = self.coords
+        pygame.draw.rect(WINDOW,RED,[x,y,20,20])
 
 
 
@@ -311,99 +320,118 @@ FUNCTIONS
 """
 
 def draw_playing_grid():
-	"""
-	output: (None) draws rectangle of playing grid
-	"""
-	pygame.draw.rect(WINDOW,DARK_GREEN,[100,80,700,700])
+    """
+    output: (None) draws rectangle of playing grid
+    """
+    pygame.draw.rect(WINDOW,DARK_GREEN,[100,80,700,700])
 
 
 def draw_button(button,color):
-	"""
-	inputs: button: (str) which button ("play" for example) 
-			color: (tuple of (int,int,int)) color of button 
-	output: (None) draws rectangle of button
-	"""
-	if button == "play":
-		# draw rect
-		pygame.draw.rect(WINDOW,color,[WINDOW_WIDTH/8,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE,200,50])
-		# add "play" to play button
-		WINDOW.blit(BTN_PLAY , (WINDOW_WIDTH/9+75,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE+10))
+    """
+    inputs: button: (str) which button ("play" for example) 
+            color: (tuple of (int,int,int)) color of button 
+    output: (None) draws rectangle of button
+    """
+    if button == "play":
+        # draw rect
+        pygame.draw.rect(WINDOW,color,[WINDOW_WIDTH/8,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE,200,50])
+        # add "play" to play button
+        WINDOW.blit(BTN_PLAY , (WINDOW_WIDTH/9+75,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE+10))
 
-	elif button == "quit":
-		# draw rect
-		pygame.draw.rect(WINDOW,color,[WINDOW_WIDTH/2-100,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE,200,50])
-		# add "quit" to quit button     
-		WINDOW.blit(BTN_QUIT , (WINDOW_WIDTH/2-100+65,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE+10))
+    elif button == "quit":
+        # draw rect
+        pygame.draw.rect(WINDOW,color,[WINDOW_WIDTH/2-100,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE,200,50])
+        # add "quit" to quit button     
+        WINDOW.blit(BTN_QUIT , (WINDOW_WIDTH/2-100+65,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE+10))
 
-	elif button == "mode":
-		# draw rect
-		pygame.draw.rect(WINDOW,color,[WINDOW_WIDTH/2+140,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE,200,50])
-		# add text to mode button
-		if current_mode == "classic":
-			WINDOW.blit(BTN_MODE_CLASSIC, (WINDOW_WIDTH/2+140+25,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE+10))
-		elif current_mode == "face":
-			WINDOW.blit(BTN_MODE_FACE, (WINDOW_WIDTH/2+140+40,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE+10))
+    elif button == "mode":
+        # draw rect
+        pygame.draw.rect(WINDOW,color,[WINDOW_WIDTH/2+140,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE,200,50])
+        # add text to mode button
+        if current_mode == "classic":
+            WINDOW.blit(BTN_MODE_CLASSIC, (WINDOW_WIDTH/2+140+25,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE+10))
+        elif current_mode == "face":
+            WINDOW.blit(BTN_MODE_FACE, (WINDOW_WIDTH/2+140+40,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE+10))
 
 
 def mouse_hover_over_btn(button, mouse_x,mouse_y):
-	"""
-	inputs: button:  (str) which button ("play" for example)
-			mouse_x: (int) x coord of mouse
-			mouse_y: (int) y coord of mouse
+    """
+    inputs: button:  (str) which button ("play" for example)
+            mouse_x: (int) x coord of mouse
+            mouse_y: (int) y coord of mouse
 
-	output: (boolean) returns true if mouse is hovering over button 
-	"""
-	if button == "play":
-		return WINDOW_WIDTH/8 <= mouse_x <= (WINDOW_WIDTH/8)+200 and WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE <= mouse_y <= (WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE)+50
-	elif button == "quit":
-		return WINDOW_WIDTH/2-100 <= mouse_x <= (WINDOW_WIDTH/2-100)+200 and WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE <= mouse_y <= (WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE)+50
-	elif button == "mode":
-		return WINDOW_WIDTH/2+140 <= mouse_x <= (WINDOW_WIDTH/2+140)+200 and WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE <= mouse_y <= (WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE)+50
+    output: (boolean) returns true if mouse is hovering over button 
+    """
+    if button == "play":
+        return WINDOW_WIDTH/8 <= mouse_x <= (WINDOW_WIDTH/8)+200 and WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE <= mouse_y <= (WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE)+50
+    elif button == "quit":
+        return WINDOW_WIDTH/2-100 <= mouse_x <= (WINDOW_WIDTH/2-100)+200 and WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE <= mouse_y <= (WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE)+50
+    elif button == "mode":
+        return WINDOW_WIDTH/2+140 <= mouse_x <= (WINDOW_WIDTH/2+140)+200 and WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE <= mouse_y <= (WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE)+50
 
 
 def change_btn_shade_on_hover(button, mouse_x, mouse_y):
-	"""
-	inputs: button:  (str) which button ("play" for example)
-			mouse_x: (int) x coord of mouse
-			mouse_y: (int) y coord of mouse
+    """
+    inputs: button:  (str) which button ("play" for example)
+            mouse_x: (int) x coord of mouse
+            mouse_y: (int) y coord of mouse
 
-	output: (None) If mouse hovers over a button the button will change color 
-	"""
-	if mouse_hover_over_btn(button, mouse_x, mouse_y):
-		draw_button(button, LIGHT_GRAY)
-	else:
-		draw_button(button, DARK_GRAY)
+    output: (None) If mouse hovers over a button the button will change color 
+    """
+    if mouse_hover_over_btn(button, mouse_x, mouse_y):
+        draw_button(button, LIGHT_GRAY)
+    else:
+        draw_button(button, DARK_GRAY)
 
 
 def show_score(score):
-	"""
-	input: score: (int) the current score
-	output: (None) show the current score
-	"""
-	pygame.draw.rect(WINDOW,GREEN,[WINDOW_WIDTH/2-60+80,30,100,50])
-	score_text = BTN_FONT.render(f'Score: {score}', True, BLACK)
-	WINDOW.blit(score_text, (WINDOW_WIDTH/2-60,40))
+    """
+    input: score: (int) the current score
+    output: (None) show the current score
+    """
+    pygame.draw.rect(WINDOW,GREEN,[WINDOW_WIDTH/2-60+80,30,100,50])
+    score_text = BTN_FONT.render(f'Score: {score}', True, BLACK)
+    WINDOW.blit(score_text, (WINDOW_WIDTH/2-60,40))
+
+def show_best_score(best_score):
+    """
+    input: score: (int) the current score
+    output: (None) show the current score
+    """
+    pygame.draw.rect(WINDOW,GREEN,[WINDOW_WIDTH/2-60+360,30,100,50])
+    best_score_text = BTN_FONT.render(f'Best score: {best_score}', True, BLACK)
+    WINDOW.blit(best_score_text, (WINDOW_WIDTH/2-60+180,40))
 
 
 def generate_random_coords():
-	"""
-	output (tuple of (int, int)) : random point on grid
-	"""
-	return (100 + 20 * randrange(700/20),80 + 20 * randrange(700/20)) # 0 - 699 inclusive
+    """
+    output (tuple of (int, int)) : random point on grid
+    """
+    return (100 + 20 * randrange(700/20),80 + 20 * randrange(700/20)) # 0 - 699 inclusive
 
 
 def generate_apple_coords():
-	"""
-	output (tuple of (int, int)) : random point on grid for apple
-	"""
-	apple_coords = generate_random_coords()
-	if apple_coords in snake.coords:
-		generate_apple_coords()
-	else:
-		return apple_coords
+    """
+    output (tuple of (int, int)) : random point on grid for apple
+    """
+    apple_coords = generate_random_coords()
+    if apple_coords in snake.coords:
+        return generate_apple_coords()
+    else:
+        return apple_coords
 
-
-			
+# eti
+def init_best_score():
+    if path.exists('best_score.txt.dat'):
+        d = shelve.open('best_score.txt')
+        best_score = d['score']
+    else:
+        d = shelve.open('best_score.txt')
+        d['score'] = 0
+        best_score = 0
+    d.close()
+    return best_score
+            
 
 
 """
@@ -412,13 +440,14 @@ OTHER INITS
 
 # init snake
 snake = Snake([(420,400),(400,400)],20,0)
-#				head      tail		x  y (init direction)
+#               head      tail      x  y (init direction)
 
 # init apple
 apple = Apple(generate_apple_coords())
 
-
-
+# eti
+# init best_score
+best_score = init_best_score()
 
 
 """
@@ -427,8 +456,10 @@ GAME LOOP
 
 while True:
 
-	# every timestep resets the number of desired changes to direction
-	# (this gets incremented every timestep)
+    print("best_score : " + str(best_score))
+
+    # every timestep resets the number of desired changes to direction
+    # (this gets incremented every timestep)
     nb_desired_changes = 0
 
     # check events
@@ -448,30 +479,30 @@ while True:
                 sys.exit()
 
             # if press play btn start game
-        	# if we're playing, disable p (even make btn look disabled)
+            # if we're playing, disable p (even make btn look disabled)
             if mouse_hover_over_btn("play", mouse_x, mouse_y):
                 snake_can_move = True
 
-        	# if press mode button change mode
-        	# disable m during gameplay
+            # if press mode button change mode
+            # disable m during gameplay
             if mouse_hover_over_btn("mode", mouse_x, mouse_y): # and NOT_PLAYING:
                 if m_count % 2 == 0:
-        			# change to face
+                    # change to face
                     current_mode = "face"
                 else:
-        			# change to classic
+                    # change to classic
                     current_mode = "classic"
 
-        		# increment m_count
+                # increment m_count
                 m_count += 1
 
         # key pressed
         if event.type == pygame.KEYDOWN and snake_can_move:
-        	# want to change directio so add 1 (if it passes 1 then change_direction is disabled)
-        	nb_desired_changes += 1
-        	if nb_desired_changes == 1:
-        		snake.change_direction_with_keys(event)
-        	
+            # want to change directio so add 1 (if it passes 1 then change_direction is disabled)
+            nb_desired_changes += 1
+            if nb_desired_changes == 1:
+                snake.change_direction_with_keys(event)
+            
 
   
     # get mouse position coordinates
@@ -479,13 +510,16 @@ while True:
 
     # be able to change shade of button when hovering over it
     for button in buttons:
-    	change_btn_shade_on_hover(button, mouse_x, mouse_y)
+        change_btn_shade_on_hover(button, mouse_x, mouse_y)
 
     # draw grid
     draw_playing_grid()
 
     # show score
     show_score(score)
+
+    # show best_score
+    show_best_score(best_score)
 
     # draw snake and apple
     snake.show()
@@ -497,17 +531,29 @@ while True:
 
     # snake dies
     if snake.died():
-    	# reset snake
-    	del snake
-    	snake = Snake([(420,400),(400,400)],20,0)
-    	snake_can_move = False
+        # reset snake
+        del snake
+        snake = Snake([(420,400),(400,400)],20,0)
+        snake_can_move = False
 
-    	# reset apple
-    	del apple
-    	apple = Apple(generate_apple_coords())
+        # reset apple
+        del apple
+        apple = Apple(generate_apple_coords())
 
-    	# reinit score
-    	score = 0
+        # Write best_score inside a file
+        try:
+            if score >= best_score:
+                d = shelve.open('best_score.txt')
+                d['score'] = score
+                d.close()
+        except:
+            print("BLIBLI")
+        # reinit score
+        score = 0
+        # reinit best_score
+        best_score = init_best_score()
+
+            
 
  
 
