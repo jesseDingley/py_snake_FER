@@ -262,7 +262,7 @@ class Snake:
 		method to check if snake died
 		output (boolean)
 		"""
-		return self.hit_wall() # or ...
+		return self.hit_wall() or self.hit_self() # or ...
 
 
 	def hit_wall(self):
@@ -272,6 +272,12 @@ class Snake:
 		"""
 		return self.coords[0][0] >= 700 + 100 or self.coords[0][0] < 100 or self.coords[0][1] >= 700 + 80 or self.coords[0][1] < 80
 
+
+	def hit_self(self):
+		"""
+		method to check if hit self
+		"""
+		return self.coords[0] in self.coords[1:]
 
 
 
@@ -379,12 +385,6 @@ def show_score(score):
 	WINDOW.blit(score_text, (WINDOW_WIDTH/2-60,40))
 
 
-# def erase_score():
-# 	"""
-# 	output (None): erase score so the new scores wont write on top of the old scores
-# 	"""
-
-
 def generate_random_coords():
 	"""
 	output (tuple of (int, int)) : random point on grid
@@ -416,6 +416,9 @@ snake = Snake([(420,400),(400,400)],20,0)
 
 # init apple
 apple = Apple(generate_apple_coords())
+
+
+
 
 
 """
