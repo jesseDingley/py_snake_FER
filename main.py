@@ -90,6 +90,7 @@ FramePerSec = pygame.time.Clock()
 
 # colors (RGB)
 GREEN = (0, 255, 0)
+NICE_GREEN = (87,138,52)
 RED = (255,0,0)
 BLUE = (0,0,255)
 DARK_GREEN = (0, 100, 0)
@@ -99,7 +100,7 @@ DARK_GRAY = (100,100,100)
 
 
 # fonts
-BTN_FONT = pygame.font.SysFont('Arial',35)
+BTN_FONT = pygame.font.SysFont('arial',35)
 
 
 # button texts
@@ -119,7 +120,7 @@ WINDOW_TITLE = "snake"
 
 # create game window
 WINDOW = pygame.display.set_mode((WINDOW_WIDTH,WINDOW_HEIGHT))
-WINDOW.fill(GREEN)
+WINDOW.fill(NICE_GREEN)
 
 
 # set window title
@@ -147,7 +148,11 @@ score = 0
 # before playing the snake can't move
 snake_can_move = False
 
+# snake head image
+snake_head = pygame.image.load("images/snake_head.png")
 
+# background image
+background = pygame.image.load("images/background.png")
 
 
 
@@ -176,8 +181,29 @@ class Snake:
         method to show / draw snake on screen
         """
         for x,y in self.coords:
-            # add segment to screen
-            pygame.draw.rect(WINDOW,BLUE,[x,y,20,20])
+            if x == self.coords[0][0] and y == self.coords[0][1]:
+                # draw head:
+
+                # determine the actual direction of the snake
+                going_left = self.x_direction == -20;
+                going_right = self.x_direction == 20;
+                going_up = self.y_direction == -20;
+                going_down = self.y_direction == 20;
+
+                draw_head = lambda rot: WINDOW.blit(pygame.transform.rotate(snake_head,rot), (x,y)) 
+
+                if going_down:
+                    draw_head(180)
+                elif going_up:
+                    draw_head(0)
+                elif going_left:
+                    draw_head(90)
+                elif going_right:
+                    draw_head(-90)
+
+            else:
+                # add segment to screen
+                pygame.draw.rect(WINDOW,BLUE,[x,y,20,20])
 
 
     def move(self):
@@ -323,8 +349,8 @@ def draw_playing_grid():
     """
     output: (None) draws rectangle of playing grid
     """
-    pygame.draw.rect(WINDOW,DARK_GREEN,[100,80,700,700])
-
+    #pygame.draw.rect(WINDOW,DARK_GREEN,[100,80,700,700])
+    WINDOW.blit(pygame.transform.rotate(background,90), (100,80))
 
 def draw_button(button,color):
     """
@@ -389,7 +415,7 @@ def show_score(score):
     input: score: (int) the current score
     output: (None) show the current score
     """
-    pygame.draw.rect(WINDOW,GREEN,[WINDOW_WIDTH/2-60+80,30,100,50])
+    pygame.draw.rect(WINDOW,NICE_GREEN,[WINDOW_WIDTH/2-60+80,30,100,50])
     score_text = BTN_FONT.render(f'Score: {score}', True, BLACK)
     WINDOW.blit(score_text, (WINDOW_WIDTH/2-60,40))
 
@@ -398,7 +424,7 @@ def show_best_score(best_score):
     input: score: (int) the current score
     output: (None) show the current score
     """
-    pygame.draw.rect(WINDOW,GREEN,[WINDOW_WIDTH/2-60+360,30,100,50])
+    pygame.draw.rect(WINDOW,NICE_GREEN,[WINDOW_WIDTH/2-60+360,30,100,50])
     best_score_text = BTN_FONT.render(f'Best score: {best_score}', True, BLACK)
     WINDOW.blit(best_score_text, (WINDOW_WIDTH/2-60+180,40))
 
@@ -455,8 +481,6 @@ GAME LOOP
 """
 
 while True:
-
-    print("best_score : " + str(best_score))
 
     # every timestep resets the number of desired changes to direction
     # (this gets incremented every timestep)
