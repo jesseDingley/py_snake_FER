@@ -6,12 +6,6 @@ goal: test out pygame
 
 
 
-
-
-
-
-
-
 """
 IMPORTS
 """
@@ -33,8 +27,12 @@ import shelve
 import os.path
 from os import path
 
-
-
+import os
+import cv2
+import numpy as np
+from keras.models import model_from_json
+from keras.preprocessing import image
+import threading
 
 
 
@@ -64,12 +62,6 @@ pygame.draw.rect(WINDOW,DARK_GREEN,[0,0,600,600])
 the (0,0) here means the TOP LEFT CORNER of the rectangle
 
 """
-
-
-
-
-
-
 
 
 
@@ -475,6 +467,11 @@ apple = Apple(generate_apple_coords())
 # init best_score
 best_score = init_best_score()
 
+# thread to run the emotion recognizer
+thread_running = threading.Event()
+thread_running.set()
+
+
 
 """
 GAME LOOP
@@ -571,7 +568,8 @@ while True:
                 d['score'] = score
                 d.close()
         except:
-            print("BLIBLI")
+            # print("BLIBLI")
+            pass
         # reinit score
         score = 0
         # reinit best_score

@@ -42,7 +42,7 @@ while True:
 
         cv2.putText(test_img, predicted_emotion, (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
 
-    resized_img = cv2.resize(test_img, (500, 350))
+    resized_img = cv2.resize(test_img, (1000, 700))
     cv2.imshow('Facial emotion analysis ',resized_img)
 
 
