@@ -452,46 +452,52 @@ def init_best_score():
             
 def emotion_detection(thread_running):
     global current_mode
-    cap=cv2.VideoCapture(0)
-    i = 0
+    # captures video feed
+    cap = cv2.VideoCapture(0)
     while thread_running.is_set():
-        # i += 1
-        # if i % 200 == 0:
-        #     print("current_mode:", current_mode)
-        if current_mode == "classic":
-            pass
-        else:
-            ret,test_img=cap.read()# captures frame and returns boolean value and captured image
+        if current_mode == "face":
+            # captures each frame and returns boolean value and captured image
+            ret, test_img = cap.read()
             if not ret:
                 continue
-            gray_img= cv2.cvtColor(test_img, cv2.COLOR_BGR2GRAY)
-
+            # get the gray representation of the frame
+            gray_img = cv2.cvtColor(test_img, cv2.COLOR_BGR2GRAY)
+            # uses the cascade classifier "face_haar_cascade" to detect the face(s)
             faces_detected = face_haar_cascade.detectMultiScale(gray_img, 1.32, 5)
-
+            # for each face detected
             for (x,y,w,h) in faces_detected:
+                # draw a rectangle around the face
                 cv2.rectangle(test_img,(x,y),(x+w,y+h),(255,0,0),thickness=7)
-                roi_gray=gray_img[y:y+w,x:x+h]#cropping region of interest i.e. face area from  image
-                roi_gray=cv2.resize(roi_gray,(48,48))
+                # crop Region Of Interest (face area from image)
+                roi_gray = gray_img[y:y+w,x:x+h]
+                # resize the image to 48*48
+                roi_gray = cv2.resize(roi_gray,(48,48))
+                # creates an array values between 0 and 255 (black and white)
                 img_pixels = image.img_to_array(roi_gray)
                 img_pixels = np.expand_dims(img_pixels, axis = 0)
+                # divide each pixel by 255 to get values between 0 and 1
                 img_pixels /= 255
 
+                # uses the "fer.json" with its weights "fer.h5" to get a matrix with values between 0 and 1 (which size is of size "emotions")
                 predictions = model.predict(img_pixels)
-
-                #find max indexed array
+                # find max indexed array
                 max_index = np.argmax(predictions[0])
-
                 emotions = ('angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral')
+                # get the emotion with the highest rank
                 predicted_emotion = emotions[max_index]
 
+                # put the emotion on top of the rectangle
                 cv2.putText(test_img, predicted_emotion, (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
-
+            # resize the image to 500*350
             resized_img = cv2.resize(test_img, (500, 350))
+            # show the image
             cv2.imshow('Facial emotion analysis ',resized_img)
 
-            if cv2.waitKey(10) == ord('q'):#wait until 'q' key is pressed
+            # wait until 'q' key is pressed (on the cv2 window)
+            if cv2.waitKey(10) == ord('q'):
                 break
 
+    # stop the capture of video feed and destroys all cv2 windows
     cap.release()
     cv2.destroyAllWindows
 
