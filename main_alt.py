@@ -27,24 +27,29 @@ import shelve
 import os.path
 from os import path
 
+# facial emotion recognition
 import os
 from fer import FER
 import cv2
 import numpy as np
 # from keras.models import model_from_json
+from tensorflow.compat.v1 import keras
 from keras.preprocessing import image
 import threading
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
+# to run FER w/ threads
 config = tf.ConfigProto(
     device_count={'CPU': 1},
     intra_op_parallelism_threads=1,
     allow_soft_placement=True
 )
 session = tf.Session(config=config)
-from tensorflow.compat.v1 import keras
 keras.backend.set_session(session)
+
+
+
 
 
 
@@ -295,6 +300,33 @@ class Snake:
                 self.y_direction = 20 # ATTENTION
 
 
+        def change_direction_with_emotion_baseline(self, emotion1, emotion2):
+            """
+            method to change direction of snake with emotion (baseline)
+
+            ** NEUTRAl emotion means DO NOTHING **
+
+            For now because of how bad the FER is we consider just 2 emotions
+            Here's how it works:
+                - if we're moving right emotion1 will make us turn left to face upwards
+                - if we're moving right emotion2 will make us turn left to face downwards
+                - if we're moving left emotion1 will make us turn right to face upwards
+                - if w're moving left emotion2 will make us turn left to face downwards
+
+                - if we're moving up emotion1 will make us turn
+            ouput (None)
+
+            """
+
+            global predicted_emotion
+
+            # determine the actual direction of the snake
+            going_left = self.x_direction == -20;
+            going_right = self.x_direction == 20;
+            going_up = self.y_direction == -20;
+            going_down = self.y_direction == 20;
+
+
     def died(self):
         """
         method to check if snake died
@@ -461,6 +493,8 @@ def init_best_score():
     d.close()
     return best_score
             
+
+       
 def emotion_detection(thread_running):
     global current_mode
     # captures video feed
@@ -485,31 +519,23 @@ def emotion_detection(thread_running):
                 roi_gray = cv2.resize(roi_gray,(48,48))
                 # creates an array values between 0 and 255 (black and white)
                 img_pixels = image.img_to_array(roi_gray).astype("uint8")
-                
-                # print(img_pixels.shape)
-                # print(img_pixels.dtype)
-                # print(img_pixels)
-                #img_pixels = np.expand_dims(img_pixels, axis = 0)
-                # divide each pixel by 255 to get values between 0 and 1
-                
-                # uses the "fer.json" with its weights "fer.h5" to get a matrix with values between 0 and 1 (which size is of size "emotions")
-                #model.predict(img_pixels)
-                # find max indexed array
-                #max_index = np.argmax(predictions[0])
-                #emotions = ('angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral')
+
+                # IMPORTANT:
+                # img_pixels is an array of (48,48,3) of dtype uint8 
+
                 # get the emotion with the highest rank
                 with session.as_default():
                     with session.graph.as_default():
                         try:
+                            # "neutral", "happy", "suprised" work :) 
                             predicted_emotion, score = detector.top_emotion(img_pixels)#emotions[max_index]
                             cv2.putText(test_img, str(predicted_emotion), (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
-                            print("SUCCESS")
+                            # print("SUCCESS")
                         except:
                             #print("FAILED")
                             pass
-                # print(predicted_emotion)
 
-                # put the emotion on top of the rectangle
+            # put the emotion on top of the rectangle
             # resize the image to 500*350
             resized_img = cv2.resize(test_img, (500, 350))
             # show the image
@@ -540,11 +566,9 @@ apple = Apple(generate_apple_coords())
 # init best_score
 best_score = init_best_score()
 
-# load model
-#model = model_from_json(open("fer.json", "r").read())
-# load weights
-#model.load_weights('fer.h5')
+# facial emotion detector
 detector = FER(mtcnn=True)
+
 face_haar_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 # thread to run the emotion recognizer
