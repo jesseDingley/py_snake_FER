@@ -452,7 +452,7 @@ def init_best_score():
             
 def emotion_detection(thread_running):
     global current_mode
-    # captures video feed
+    # capture video feed
     cap = cv2.VideoCapture(0)
     while thread_running.is_set():
         if current_mode == "face":

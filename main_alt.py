@@ -162,6 +162,9 @@ snake_head = pygame.image.load("images/snake_head.png")
 # background image
 background = pygame.image.load("images/background.png")
 
+predicted_emotion = "neutral"
+nb_same_predicted_emotion = 0
+
 
 
 
@@ -227,6 +230,7 @@ class Snake:
         global apple
         global score
         global best_score
+        global best_score_face
         # different scenarios
         try:
             ate_apple = self.coords[0][0] == apple.coords[0] and self.coords[0][1] == apple.coords[1]
@@ -242,6 +246,7 @@ class Snake:
 
             # recalculate the best score
             best_score = max(score, best_score)
+            best_score_face = max(score, best_score_face)
 
             # delete apple
             del apple
@@ -267,6 +272,8 @@ class Snake:
         going_up = self.y_direction == -20;
         going_down = self.y_direction == 20;
 
+        # print(event)
+
         # want to go left
         if event.key == pygame.K_LEFT:
             # only possible if we're not moving horizontally
@@ -279,7 +286,7 @@ class Snake:
         elif event.key == pygame.K_RIGHT:
             # only possible if we're not moving horizontally
             if (not going_left) and (not going_right):
-                # set direction to left
+                # set direction to right
                 self.x_direction = 20
                 self.y_direction = 0
                 
@@ -300,31 +307,85 @@ class Snake:
                 self.y_direction = 20 # ATTENTION
 
 
-        def change_direction_with_emotion_baseline(self, emotion1, emotion2):
-            """
-            method to change direction of snake with emotion (baseline)
+    def change_direction_with_emotion_baseline(self):
+        """
+        method to change direction of snake with emotion (baseline)
 
-            ** NEUTRAl emotion means DO NOTHING **
+        ** NEUTRAl emotion means DO NOTHING **
 
-            For now because of how bad the FER is we consider just 2 emotions
-            Here's how it works:
-                - if we're moving right emotion1 will make us turn left to face upwards
-                - if we're moving right emotion2 will make us turn left to face downwards
-                - if we're moving left emotion1 will make us turn right to face upwards
-                - if w're moving left emotion2 will make us turn left to face downwards
+        For now because of how bad the FER is we consider just 2 emotions
+        Here's how it works:
+            - if we're moving right emotion1 will make us turn left to face upwards
+            - if we're moving right emotion2 will make us turn left to face downwards
+            - if we're moving left emotion1 will make us turn right to face upwards
+            - if w're moving left emotion2 will make us turn left to face downwards
 
-                - if we're moving up emotion1 will make us turn
-            ouput (None)
+            - if we're moving up emotion1 will make us turn
+        ouput (None)
 
-            """
+        """
+        global predicted_emotion, nb_same_predicted_emotion
+        # just some printings
+        print("predicted_emotion :", predicted_emotion)
+        print("nb_same_predicted_emotion :", nb_same_predicted_emotion)
 
-            global predicted_emotion
+        # determine the actual direction of the snake
+        going_left = self.x_direction == -20;
+        going_right = self.x_direction == 20;
+        going_up = self.y_direction == -20;
+        going_down = self.y_direction == 20;
 
-            # determine the actual direction of the snake
-            going_left = self.x_direction == -20;
-            going_right = self.x_direction == 20;
-            going_up = self.y_direction == -20;
-            going_down = self.y_direction == 20;
+        # sad and neutral are quite similar and interfer with each other, so if we are sad or neutral, we do nothing
+        if predicted_emotion == "sad" or predicted_emotion == "neutral":
+            nb_same_predicted_emotion = 0
+        # happy is quite strongly isolated from the other emotions so if we are happy, we turn left
+        elif predicted_emotion == "happy":
+            nb_same_predicted_emotion += 1
+        # angry, fear and surprise are quite hard to get so if one of them is got, then we turn right
+        elif predicted_emotion in {"angry", "surprise", "fear"}:
+            nb_same_predicted_emotion += 1
+        else:
+            nb_same_predicted_emotion = 0
+
+        if nb_same_predicted_emotion == 1:
+            # nb_same_predicted_emotion = 0
+            if predicted_emotion == "happy":
+                # turn left
+                if going_down:
+                    # right
+                    e = pygame.event.Event(768, {'unicode': '', 'key': 1073741903, 'mod': 4096, 'scancode': 79, 'window': None})
+                    self.change_direction_with_keys(e)
+                elif going_right:
+                    # up
+                    e = pygame.event.Event(768, {'unicode': '', 'key': 1073741906, 'mod': 4096, 'scancode': 82, 'window': None})
+                    self.change_direction_with_keys(e)
+                elif going_up:
+                    # left
+                    e = pygame.event.Event(768, {'unicode': '', 'key': 1073741904, 'mod': 4096, 'scancode': 80, 'window': None})
+                    self.change_direction_with_keys(e)
+                elif going_left:
+                    # down
+                    e = pygame.event.Event(768, {'unicode': '', 'key': 1073741905, 'mod': 4096, 'scancode': 81, 'window': None})
+                    self.change_direction_with_keys(e)
+            elif predicted_emotion in {"angry", "surprise", "fear"}:
+                # turn right
+                if going_down:
+                    # left
+                    e = pygame.event.Event(768, {'unicode': '', 'key': 1073741904, 'mod': 4096, 'scancode': 80, 'window': None})
+                    self.change_direction_with_keys(e)
+                elif going_right:
+                    # down
+                    e = pygame.event.Event(768, {'unicode': '', 'key': 1073741905, 'mod': 4096, 'scancode': 81, 'window': None})
+                    self.change_direction_with_keys(e)
+                elif going_up:
+                    # right
+                    e = pygame.event.Event(768, {'unicode': '', 'key': 1073741903, 'mod': 4096, 'scancode': 79, 'window': None})
+                    self.change_direction_with_keys(e)
+                elif going_left:
+                    # up
+                    e = pygame.event.Event(768, {'unicode': '', 'key': 1073741906, 'mod': 4096, 'scancode': 82, 'window': None})
+                    self.change_direction_with_keys(e)
+
 
 
     def died(self):
@@ -454,14 +515,15 @@ def show_score(score):
     score_text = BTN_FONT.render(f'Score: {score}', True, BLACK)
     WINDOW.blit(score_text, (WINDOW_WIDTH/2-60,40))
 
-def show_best_score(best_score):
+def show_best_score(sscore):
     """
     input: score: (int) the current score
     output: (None) show the current score
     """
     pygame.draw.rect(WINDOW,NICE_GREEN,[WINDOW_WIDTH/2-60+360,30,100,50])
-    best_score_text = BTN_FONT.render(f'Best score: {best_score}', True, BLACK)
+    best_score_text = BTN_FONT.render(f'Best score: {sscore}', True, BLACK)    
     WINDOW.blit(best_score_text, (WINDOW_WIDTH/2-60+180,40))
+    
 
 
 def generate_random_coords():
@@ -481,22 +543,24 @@ def generate_apple_coords():
     else:
         return apple_coords
 
-# eti
 def init_best_score():
     if path.exists('best_score.txt.dat'):
         d = shelve.open('best_score.txt')
         best_score = d['score']
+        best_score_face = d['score_face']
     else:
         d = shelve.open('best_score.txt')
         d['score'] = 0
+        d['score_face'] = 0
         best_score = 0
+        best_score_face = 0
     d.close()
-    return best_score
+    return (best_score, best_score_face)
             
 
        
 def emotion_detection(thread_running):
-    global current_mode
+    global current_mode, predicted_emotion
     # captures video feed
     cap = cv2.VideoCapture(0)
     while thread_running.is_set():
@@ -529,13 +593,14 @@ def emotion_detection(thread_running):
                         try:
                             # "neutral", "happy", "suprised" work :) 
                             predicted_emotion, score = detector.top_emotion(img_pixels)#emotions[max_index]
+                            # print(predicted_emotion)
+                            # put the emotion on top of the rectangle
                             cv2.putText(test_img, str(predicted_emotion), (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
                             # print("SUCCESS")
                         except:
                             #print("FAILED")
                             pass
 
-            # put the emotion on top of the rectangle
             # resize the image to 500*350
             resized_img = cv2.resize(test_img, (500, 350))
             # show the image
@@ -564,7 +629,7 @@ apple = Apple(generate_apple_coords())
 
 # eti
 # init best_score
-best_score = init_best_score()
+best_score, best_score_face = init_best_score()
 
 # facial emotion detector
 detector = FER(mtcnn=True)
@@ -617,9 +682,11 @@ while True:
                 if m_count % 2 == 0:
                     # change to face
                     current_mode = "face"
+                    FPS = 5
                 else:
                     # change to classic
                     current_mode = "classic"
+                    FPS = 15
 
                 # increment m_count
                 m_count += 1
@@ -631,6 +698,9 @@ while True:
                 nb_desired_changes += 1
                 if nb_desired_changes == 1:
                     snake.change_direction_with_keys(event)
+    if current_mode == "face":
+        if snake_can_move:
+            snake.change_direction_with_emotion_baseline()
             
 
   
@@ -648,13 +718,16 @@ while True:
     show_score(score)
 
     # show best_score
-    show_best_score(best_score)
+    if current_mode == "classic": 
+        show_best_score(best_score)
+    else:
+        show_best_score(best_score_face)
 
     # draw snake and apple
     snake.show()
     apple.show()
 
-    # chekck if snake can move (i.e. when "play" is pressed)
+    # check if snake can move (i.e. when "play" is pressed)
     if snake_can_move:
         snake.move()
 
@@ -671,17 +744,24 @@ while True:
 
         # Write best_score inside a file
         try:
-            if score >= best_score:
-                d = shelve.open('best_score.txt')
-                d['score'] = score
-                d.close()
+            if current_mode == "classic":
+                if score >= best_score:
+                    d = shelve.open('best_score.txt')
+                    d['score'] = score
+                    d.close()
+            elif current_mode == "face":
+                if score >= best_score_face:
+                    d = shelve.open('best_score.txt')
+                    d['score_face'] = score
+                    d.close()
+
         except:
             # print("BLIBLI")
             pass
         # reinit score
         score = 0
         # reinit best_score
-        best_score = init_best_score()
+        best_score, best_score_face = init_best_score()
 
             
 
