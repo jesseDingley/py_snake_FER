@@ -162,6 +162,9 @@ snake_head = pygame.image.load("images/snake_head.png")
 # background image
 background = pygame.image.load("images/background.png")
 
+# apple image
+apple_image = pygame.image.load("images/apple_image.png")
+
 predicted_emotion = "neutral"
 nb_same_predicted_emotion = 0
 
@@ -426,7 +429,9 @@ class Apple:
         method to show / draw apple on screen
         """
         x, y = self.coords
-        pygame.draw.rect(WINDOW,RED,[x,y,20,20])
+        draw_apple = lambda rot: WINDOW.blit(pygame.transform.rotate(apple_image,rot), (x,y))
+        # pygame.draw.rect(WINDOW,RED,[x,y,20,20])
+        draw_apple(0)
 
 
 
