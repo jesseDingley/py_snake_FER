@@ -13,6 +13,8 @@ IMPORTS
 # import sys
 import sys
 
+import time
+
 # import pygame
 import pygame
 from pygame.locals import *
@@ -191,10 +193,12 @@ class Snake:
 
 
     def show(self):
+        # global FPS
         """
         method to show / draw snake on screen
         """
         for x,y in self.coords:
+            # i_count = 1
             if x == self.coords[0][0] and y == self.coords[0][1]:
                 # draw head:
 
@@ -216,8 +220,26 @@ class Snake:
                     draw_head(-90)
 
             else:
+                # if i_count < len(self.coords):
+                #     x_mean = (x + self.coords[i_count][0])/2
+                #     y_mean = (y + self.coords[i_count][1])/2
+                #     print("x =", x)
+                #     print("y =", y)
+                #     print("x_mean =", x_mean)
+                #     print("y_mean =", y_mean)
+                #     pygame.draw.rect(WINDOW,BLUE,[x_mean,y_mean,20,20])
+                # else:
+                #     pygame.draw.rect(WINDOW,BLUE,[x,y,20,20])
+
+                # waiting_time_before_action = int(round(time.time() * 1000))
+                # current_time = int(round(time.time() * 1000))
+
+                # while current_time - waiting_time_before_action < 1/2*FPS:
+                #     current_time = int(round(time.time() * 1000))
+
                 # add segment to screen
                 pygame.draw.rect(WINDOW,BLUE,[x,y,20,20])
+            # i_count += 1
 
 
     def move(self):
@@ -310,7 +332,7 @@ class Snake:
                 self.y_direction = 20 # ATTENTION
 
 
-    def change_direction_with_emotion_baseline(self):
+    def change_direction_with_emotion(self):
         """
         method to change direction of snake with emotion (baseline)
 
@@ -329,8 +351,8 @@ class Snake:
         """
         global predicted_emotion, nb_same_predicted_emotion
         # just some printings
-        print("predicted_emotion :", predicted_emotion)
-        print("nb_same_predicted_emotion :", nb_same_predicted_emotion)
+        # print("predicted_emotion :", predicted_emotion)
+        # print("nb_same_predicted_emotion :", nb_same_predicted_emotion)
 
         # determine the actual direction of the snake
         going_left = self.x_direction == -20;
@@ -705,7 +727,7 @@ while True:
                     snake.change_direction_with_keys(event)
     if current_mode == "face":
         if snake_can_move:
-            snake.change_direction_with_emotion_baseline()
+            snake.change_direction_with_emotion()
             
 
   
