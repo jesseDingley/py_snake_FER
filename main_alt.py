@@ -94,7 +94,7 @@ pygame.init()
 
 
 # set frames per second
-FPS = 15
+FPS = 30
 FramePerSec = pygame.time.Clock()
 
 
@@ -116,6 +116,7 @@ BTN_FONT = pygame.font.SysFont('arial',35)
 # button texts
 BTN_QUIT = BTN_FONT.render('Quit', True, BLACK)
 BTN_PLAY = BTN_FONT.render('Play', True, BLACK)
+BTN_OPT = BTN_FONT.render('Options', True, BLACK)
 BTN_MODE_CLASSIC = BTN_FONT.render('M: Classic', True, BLACK)
 BTN_MODE_FACE = BTN_FONT.render('M: Face', True, BLACK)
 
@@ -143,7 +144,7 @@ BOTTOM_BTN_CLEARANCE = 70
 pygame.draw.rect(WINDOW,LIGHT_GRAY,[0,WINDOW_HEIGHT-100,WINDOW_WIDTH,10])
 
 # all buttons
-buttons = ["play", "quit", "mode"]
+buttons = ["play", "quit", "mode"]#, "opt"]
 
 # number of times the "m" has been hit or the mode button has been pressed)
 m_count = 0
@@ -418,7 +419,7 @@ class Snake:
         method to check if snake died
         output (boolean)
         """
-        return self.hit_wall() or self.hit_self() # or ...
+        return self.hit_wall() or self.hit_self() or self.hit_bomb() # or ...
 
 
     def hit_wall(self):
@@ -434,6 +435,14 @@ class Snake:
         method to check if hit self
         """
         return self.coords[0] in self.coords[1:]
+
+
+    def hit_bomb(self):
+        """
+        method to check if hit bomb
+        """
+        global bombs
+        return self.coords[0] in [bomb.coords for bomb in bombs]
 
 
 
@@ -457,10 +466,107 @@ class Apple:
 
 
 
+class Bomb:
+    def __init__(self, coords):
+        """
+        coords: (tuple of (int,int)): coordinates of bomb
+        """
+        super(Bomb, self).__init__()
+        self.coords = coords
+
+    def show(self):
+        """
+        method to show / draw apple on screen
+        """
+        x, y = self.coords
+        # draw_bomb = lambda rot: WINDOW.blit(pygame.transform.rotate(apple_image,rot), (x,y))
+        pygame.draw.rect(WINDOW,BLACK,[x,y,20,20])
+        # draw_apple(0)
 
 
 
+class Checkbox:
+    def __init__(self, surface, x, y, color=(230, 230, 230), caption="", outline_color=(0, 0, 0),
+                 check_color=(0, 0, 0), font_size=40, font_color=(0, 0, 0), text_offset=(28, 1)):
+        self.surface = surface
+        self.x = x
+        self.y = y
+        self.color = color
+        self.caption = caption
+        self.oc = outline_color
+        self.cc = check_color
+        self.fs = font_size
+        self.fc = font_color
+        self.to = text_offset
+        # checkbox object
+        self.checkbox_obj = pygame.Rect(self.x, self.y, 20, 20)
+        self.checkbox_outline = self.checkbox_obj.copy()
+        # variables to test the different states of the checkbox
+        self.checked = False
+        self.active = False
+        self.unchecked = True
+        self.click = False
 
+    def _draw_button_text(self):
+        self.font = pygame.font.Font(None, self.fs)
+        self.font_surf = self.font.render(self.caption, True, self.fc)
+        w, h = self.font.size(self.caption)
+        self.font_pos = (self.x + 100 / 2 - w / 2 + self.to[0], self.y + 20 / 2 - h / 2 + self.to[1])
+        self.surface.blit(self.font_surf, self.font_pos)
+
+    def render_checkbox(self):
+        if self.checked:
+            pygame.draw.rect(self.surface, self.color, self.checkbox_obj)
+            pygame.draw.rect(self.surface, self.oc, self.checkbox_outline, 1)
+            pygame.draw.circle(self.surface, self.cc, (self.x + 10, self.y + 10), 8)
+
+        elif self.unchecked:
+            pygame.draw.rect(self.surface, self.color, self.checkbox_obj)
+            pygame.draw.rect(self.surface, self.oc, self.checkbox_outline, 1)
+        self._draw_button_text()
+
+    def _update(self, event_object):
+        x, y = pygame.mouse.get_pos()
+        px, py, w, h = self.checkbox_obj
+        if px < x < px + w and py < y < py + w:
+            if self.checked:
+                self.checked = False
+            else:
+                self.checked = True
+
+    def _mouse_up(self):
+            if self.active and not self.checked and self.click:
+                    self.checked = True
+            elif self.checked:
+                self.checked = False
+                self.unchecked = True
+
+            if self.click is True and self.active is False:
+                if self.checked:
+                    self.checked = True
+                if self.unchecked:
+                    self.unchecked = True
+                self.active = False
+
+    def update_checkbox(self, event_object):
+        if event_object.type == pygame.MOUSEBUTTONDOWN:
+            self.click = True
+            self._update(event_object)
+
+    def is_checked(self):
+        if self.checked is True:
+            return True
+        else:
+            return False
+
+    def is_unchecked(self):
+        if self.checked is False:
+            return True
+        else:
+            return False
+
+bomb_chkbox = Checkbox(WINDOW, 100, 10, caption = "Bombs")
+fast_chkbox = Checkbox(WINDOW, 100, 40, caption = "Fast")
 
 
 
@@ -493,6 +599,12 @@ def draw_button(button,color):
         # add "quit" to quit button     
         WINDOW.blit(BTN_QUIT , (WINDOW_WIDTH/2-100+65,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE+10))
 
+    elif button == "opt":
+        # draw rect
+        pygame.draw.rect(WINDOW,color,[100,20,200,50])
+        # add "option" to opt button     
+        WINDOW.blit(BTN_OPT , (100+40,20+10))
+
     elif button == "mode":
         # draw rect
         pygame.draw.rect(WINDOW,color,[WINDOW_WIDTH/2+140,WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE,200,50])
@@ -517,6 +629,8 @@ def mouse_hover_over_btn(button, mouse_x,mouse_y):
         return WINDOW_WIDTH/2-100 <= mouse_x <= (WINDOW_WIDTH/2-100)+200 and WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE <= mouse_y <= (WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE)+50
     elif button == "mode":
         return WINDOW_WIDTH/2+140 <= mouse_x <= (WINDOW_WIDTH/2+140)+200 and WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE <= mouse_y <= (WINDOW_HEIGHT-BOTTOM_BTN_CLEARANCE)+50
+    elif button == "opt":
+        return 100 <= mouse_x <= 300 and 20 <= mouse_y <= 70
 
 
 def change_btn_shade_on_hover(button, mouse_x, mouse_y):
@@ -565,10 +679,22 @@ def generate_apple_coords():
     output (tuple of (int, int)) : random point on grid for apple
     """
     apple_coords = generate_random_coords()
-    if apple_coords in snake.coords:
+    if apple_coords in snake.coords or apple_coords in [bomb.coords for bomb in bombs]:
         return generate_apple_coords()
     else:
         return apple_coords
+
+
+def generate_bomb_coords():
+    """
+    output (tuple of (int, int)) : random point on grid for bomb
+    """
+    bomb_coords = generate_random_coords()
+    if bomb_coords in snake.coords or bomb_coords == apple.coords or bomb_coords in [bomb.coords for bomb in bombs]:
+        return generate_bomb_coords()
+    else:
+        return bomb_coords
+
 
 def init_best_score():
     if path.exists('best_score.txt.dat'):
@@ -643,9 +769,14 @@ def emotion_detection(thread_running):
 
 
 
+
+
 """
 OTHER INITS
 """
+
+# init bombs
+bombs = []
 
 # init snake
 snake = Snake([(420,400),(400,400)],20,0)
@@ -671,23 +802,44 @@ th.start()
 
 
 
+bomb_count = 0
+
 """
 GAME LOOP
 """
 
 while True:
 
+    if snake_can_move:
+        bomb_count += 1
+        if bomb_count % 100 == 0:
+            bombs.append(Bomb(generate_bomb_coords()))
+
     # every timestep resets the number of desired changes to direction
     # (this gets incremented every timestep)
     nb_desired_changes = 0
 
+    bomb_chkbox.render_checkbox()
+    if bomb_chkbox.is_unchecked():
+        bombs = []
+
+    fast_chkbox.render_checkbox()
+    if fast_chkbox.is_checked():
+        FPS += 30
+
+
     # check events
     for event in pygame.event.get():
+
 
         # check if we're quitting
         if event.type == QUIT:
             pygame.quit()
             sys.exit()
+
+        if not snake_can_move:
+            bomb_chkbox.update_checkbox(event)
+            fast_chkbox.update_checkbox(event)
 
         # mouse clicked
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -697,6 +849,12 @@ while True:
                 thread_running.clear()
                 pygame.quit()
                 sys.exit()
+
+            # if optn button is clicked: open option window
+            if mouse_hover_over_btn("opt", mouse_x, mouse_y):
+                # opt_menu = OptionMenu(90)
+                # opt_menu.launch()
+                pass
 
             # if press play btn start game
             # if we're playing, disable p (even make btn look disabled)
@@ -713,7 +871,7 @@ while True:
                 else:
                     # change to classic
                     current_mode = "classic"
-                    FPS = 15
+                    FPS = 30
 
                 # increment m_count
                 m_count += 1
@@ -750,7 +908,9 @@ while True:
     else:
         show_best_score(best_score_face)
 
-    # draw snake and apple
+    # draw snake and apple and bombs
+    for bomb in bombs:
+        bomb.show()
     snake.show()
     apple.show()
 
@@ -760,6 +920,10 @@ while True:
 
     # snake dies
     if snake.died():
+
+        # reset bombs
+        bombs = []
+
         # reset snake
         del snake
         snake = Snake([(420,400),(400,400)],20,0)
