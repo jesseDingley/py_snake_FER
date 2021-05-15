@@ -168,6 +168,12 @@ background = pygame.image.load("images/background.png")
 # apple image
 apple_image = pygame.image.load("images/apple_image.png")
 
+# bomb image
+bomb_image = pygame.image.load('images/bomb_img2.png')
+
+# gold ap img
+golden_apple_image = pygame.image.load('images/gold_ap_img.png')
+
 predicted_emotion = "neutral"
 nb_same_predicted_emotion = 0
 
@@ -254,14 +260,21 @@ class Snake:
         self.coords.insert(0,new_head)
 
         global apple
+        global golden_apple
         global score
         global best_score
         global best_score_face
+        global can_show_golden_apple
         # different scenarios
         try:
             ate_apple = self.coords[0][0] == apple.coords[0] and self.coords[0][1] == apple.coords[1]
         except:
             ate_apple = False
+
+        try:
+            ate_golden_apple = self.coords[0][0] == golden_apple.coords[0] and self.coords[0][1] == golden_apple.coords[1]
+        except:
+            ate_golden_apple = False
 
         if ate_apple:
             # then dont remove tail because the snake ate an apple
@@ -269,6 +282,7 @@ class Snake:
             # increment score by 1
             # erase_score()
             score += 1
+        
 
             # recalculate the best score
             best_score = max(score, best_score)
@@ -278,7 +292,15 @@ class Snake:
             del apple
 
             # create new one
-            apple = Apple(generate_apple_coords())
+            apple = Apple(generate_apple_coords(), apple_image)
+
+        elif ate_golden_apple and can_show_golden_apple:
+            score += 5
+            best_score = max(score, best_score)
+            best_score_face = max(score, best_score_face)
+            del golden_apple
+            golden_apple = GoldenApple(generate_golden_apple_coords(), golden_apple_image)
+            can_show_golden_apple = False
 
         else:       
             # remove tail
@@ -447,42 +469,32 @@ class Snake:
 
 
 
-class Apple:
-    def __init__(self, coords):
+class Object:
+    def __init__(self, coords, object_img):
         """
-        coords: (tuple of (int,int)): coordinates of apple
+        coords: (tuple of (int,int)): coordinates of object
         """
-        super(Apple, self).__init__()
+        super(Object, self).__init__()
         self.coords = coords
+        self.object_img = object_img
 
     def show(self):
         """
-        method to show / draw apple on screen
+        method to show / draw object on screen
         """
         x, y = self.coords
-        draw_apple = lambda rot: WINDOW.blit(pygame.transform.rotate(apple_image,rot), (x,y))
+        draw_object = lambda rot: WINDOW.blit(pygame.transform.rotate(self.object_img,rot), (x,y))
         # pygame.draw.rect(WINDOW,RED,[x,y,20,20])
-        draw_apple(0)
+        draw_object(0)
 
+class GoldenApple(Object):
+    pass
 
+class Apple(Object):
+    pass
 
-class Bomb:
-    def __init__(self, coords):
-        """
-        coords: (tuple of (int,int)): coordinates of bomb
-        """
-        super(Bomb, self).__init__()
-        self.coords = coords
-
-    def show(self):
-        """
-        method to show / draw apple on screen
-        """
-        x, y = self.coords
-        # draw_bomb = lambda rot: WINDOW.blit(pygame.transform.rotate(apple_image,rot), (x,y))
-        pygame.draw.rect(WINDOW,BLACK,[x,y,20,20])
-        # draw_apple(0)
-
+class Bomb(Object):
+    pass
 
 
 class Checkbox:
@@ -679,10 +691,23 @@ def generate_apple_coords():
     output (tuple of (int, int)) : random point on grid for apple
     """
     apple_coords = generate_random_coords()
-    if apple_coords in snake.coords or apple_coords in [bomb.coords for bomb in bombs]:
+    if apple_coords in snake.coords or apple_coords in [bomb.coords for bomb in bombs] or apple_coords == golden_apple.coords:
         return generate_apple_coords()
     else:
         return apple_coords
+
+
+
+def generate_golden_apple_coords():
+    """
+    output (tuple of (int, int)) : random point on grid for apple
+    """
+    gapple_coords = generate_random_coords()
+    if gapple_coords in snake.coords or gapple_coords in [bomb.coords for bomb in bombs] or gapple_coords == apple.coords:
+        return generate_golden_apple_coords()
+    else:
+        return gapple_coords
+
 
 
 def generate_bomb_coords():
@@ -690,10 +715,11 @@ def generate_bomb_coords():
     output (tuple of (int, int)) : random point on grid for bomb
     """
     bomb_coords = generate_random_coords()
-    if bomb_coords in snake.coords or bomb_coords == apple.coords or bomb_coords in [bomb.coords for bomb in bombs]:
+    if bomb_coords in snake.coords or bomb_coords == apple.coords or bomb_coords in [bomb.coords for bomb in bombs] or bomb_coords == golden_apple.coords:
         return generate_bomb_coords()
     else:
         return bomb_coords
+
 
 
 def init_best_score():
@@ -778,12 +804,18 @@ OTHER INITS
 # init bombs
 bombs = []
 
+apple = Apple((0,0), apple_image)
+golden_apple = GoldenApple((0,0), golden_apple_image)
+
 # init snake
 snake = Snake([(420,400),(400,400)],20,0)
 #               head      tail      x  y (init direction)
 
 # init apple
-apple = Apple(generate_apple_coords())
+apple = Apple(generate_apple_coords(), apple_image)
+
+# init golden apple
+golden_apple = GoldenApple(generate_golden_apple_coords(), golden_apple_image)
 
 # eti
 # init best_score
@@ -804,28 +836,21 @@ th.start()
 
 bomb_count = 0
 
+can_show_golden_apple = False
+
 """
 GAME LOOP
 """
 
 while True:
 
-    if snake_can_move:
-        bomb_count += 1
-        if bomb_count % 100 == 0:
-            bombs.append(Bomb(generate_bomb_coords()))
+
+
 
     # every timestep resets the number of desired changes to direction
     # (this gets incremented every timestep)
     nb_desired_changes = 0
 
-    bomb_chkbox.render_checkbox()
-    if bomb_chkbox.is_unchecked():
-        bombs = []
-
-    fast_chkbox.render_checkbox()
-    if fast_chkbox.is_checked():
-        FPS += 30
 
 
     # check events
@@ -902,15 +927,42 @@ while True:
     # show score
     show_score(score)
 
+    # draw snake and apple and bombs
+
+    bomb_chkbox.render_checkbox()
+    if bomb_chkbox.is_unchecked():
+        bombs = []
+    else:
+        for bomb in bombs:
+            bomb.show()
+
+    fast_chkbox.render_checkbox()
+    if fast_chkbox.is_checked():
+        FPS += 30
+
+    if snake_can_move:
+        bomb_count += 1
+        if bomb_count % 100 == 0:
+            bombs.append(Bomb(generate_bomb_coords(), bomb_image))
+
+        # spawn golden apple
+        if bomb_count % 500 == 0:
+            golden_apple_count = 0
+            can_show_golden_apple = True
+
+        if can_show_golden_apple:
+            golden_apple.show()
+            golden_apple_count += 1
+            if golden_apple_count % 100 == 0:
+                del golden_apple
+                can_show_golden_apple = False
+                golden_apple = GoldenApple(generate_golden_apple_coords(), golden_apple_image)
+
     # show best_score
     if current_mode == "classic": 
         show_best_score(best_score)
     else:
         show_best_score(best_score_face)
-
-    # draw snake and apple and bombs
-    for bomb in bombs:
-        bomb.show()
     snake.show()
     apple.show()
 
@@ -931,7 +983,10 @@ while True:
 
         # reset apple
         del apple
-        apple = Apple(generate_apple_coords())
+        apple = Apple(generate_apple_coords(), apple_image)
+
+        del golden_apple
+        golden_apple = GoldenApple(generate_golden_apple_coords(), golden_apple_image)
 
         # Write best_score inside a file
         try:
