@@ -36,7 +36,7 @@ import cv2
 import numpy as np
 # from keras.models import model_from_json
 from tensorflow.compat.v1 import keras
-from keras.preprocessing import image
+from tensorflow.keras.preprocessing import image
 import threading
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
@@ -94,7 +94,7 @@ pygame.init()
 
 
 # set frames per second
-FPS = 30
+FPS = 15
 FramePerSec = pygame.time.Clock()
 
 
@@ -159,20 +159,25 @@ score = 0
 # before playing the snake can't move
 snake_can_move = False
 
+if getattr(sys, 'frozen', False):
+    wd = sys._MEIPASS
+else:
+    wd = ''
+
 # snake head image
-snake_head = pygame.image.load("images/snake_head.png")
+snake_head = pygame.image.load(os.path.join(wd, "images/snake_head.png"))
 
 # background image
-background = pygame.image.load("images/background.png")
+background = pygame.image.load(os.path.join(wd, "images/background.png"))
 
 # apple image
-apple_image = pygame.image.load("images/apple_image.png")
+apple_image = pygame.image.load(os.path.join(wd, "images/apple_image.png"))
 
 # bomb image
-bomb_image = pygame.image.load('images/bomb_img2.png')
+bomb_image = pygame.image.load(os.path.join(wd, 'images/bomb_img2.png'))
 
 # gold ap img
-golden_apple_image = pygame.image.load('images/gold_ap_img.png')
+golden_apple_image = pygame.image.load(os.path.join(wd, 'images/gold_ap_img.png'))
 
 predicted_emotion = "neutral"
 nb_same_predicted_emotion = 0
@@ -200,7 +205,6 @@ class Snake:
 
 
     def show(self):
-        # global FPS
         """
         method to show / draw snake on screen
         """
@@ -227,26 +231,8 @@ class Snake:
                     draw_head(-90)
 
             else:
-                # if i_count < len(self.coords):
-                #     x_mean = (x + self.coords[i_count][0])/2
-                #     y_mean = (y + self.coords[i_count][1])/2
-                #     print("x =", x)
-                #     print("y =", y)
-                #     print("x_mean =", x_mean)
-                #     print("y_mean =", y_mean)
-                #     pygame.draw.rect(WINDOW,BLUE,[x_mean,y_mean,20,20])
-                # else:
-                #     pygame.draw.rect(WINDOW,BLUE,[x,y,20,20])
-
-                # waiting_time_before_action = int(round(time.time() * 1000))
-                # current_time = int(round(time.time() * 1000))
-
-                # while current_time - waiting_time_before_action < 1/2*FPS:
-                #     current_time = int(round(time.time() * 1000))
-
                 # add segment to screen
                 pygame.draw.rect(WINDOW,BLUE,[x,y,20,20])
-            # i_count += 1
 
 
     def move(self):
@@ -578,7 +564,7 @@ class Checkbox:
             return False
 
 bomb_chkbox = Checkbox(WINDOW, 100, 10, caption = "Bombs")
-fast_chkbox = Checkbox(WINDOW, 100, 40, caption = "Fast")
+medium_speed_chkbox = Checkbox(WINDOW, 100, 40, caption = "10 FPS")
 
 
 
@@ -864,7 +850,7 @@ while True:
 
         if not snake_can_move:
             bomb_chkbox.update_checkbox(event)
-            fast_chkbox.update_checkbox(event)
+            medium_speed_chkbox.update_checkbox(event)
 
         # mouse clicked
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -896,7 +882,7 @@ while True:
                 else:
                     # change to classic
                     current_mode = "classic"
-                    FPS = 30
+                    FPS = 15
 
                 # increment m_count
                 m_count += 1
@@ -936,9 +922,9 @@ while True:
         for bomb in bombs:
             bomb.show()
 
-    fast_chkbox.render_checkbox()
-    if fast_chkbox.is_checked():
-        FPS += 30
+    medium_speed_chkbox.render_checkbox()
+    if medium_speed_chkbox.is_checked():
+        FPS = 10
 
     if snake_can_move:
         bomb_count += 1
