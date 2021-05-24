@@ -30,7 +30,6 @@ import os.path
 from os import path
 
 # facial emotion recognition
-import os
 from fer import FER
 import cv2
 import numpy as np
@@ -278,14 +277,14 @@ class Snake:
             del apple
 
             # create new one
-            apple = Apple(generate_apple_coords(), apple_image)
+            apple = Apple(generate_apple_coords())
 
         elif ate_golden_apple and can_show_golden_apple:
             score += 5
             best_score = max(score, best_score)
             best_score_face = max(score, best_score_face)
             del golden_apple
-            golden_apple = GoldenApple(generate_golden_apple_coords(), golden_apple_image)
+            golden_apple = GoldenApple(generate_golden_apple_coords())
             can_show_golden_apple = False
 
         else:       
@@ -474,13 +473,22 @@ class Object:
         draw_object(0)
 
 class GoldenApple(Object):
-    pass
+    def __init__(self, coords, object_img = golden_apple_image):
+    	super().__init__(coords, object_img)
+    	self.coords = coords
+    	self.object_img = object_img
 
 class Apple(Object):
-    pass
+    def __init__(self, coords, object_img = apple_image):
+    	super().__init__(coords, object_img)
+    	self.coords = coords
+    	self.object_img = object_img
 
 class Bomb(Object):
-    pass
+    def __init__(self, coords, object_img = bomb_image):
+    	super().__init__(coords, object_img)
+    	self.coords = coords
+    	self.object_img = object_img
 
 
 class Checkbox:
@@ -790,18 +798,18 @@ OTHER INITS
 # init bombs
 bombs = []
 
-apple = Apple((0,0), apple_image)
-golden_apple = GoldenApple((0,0), golden_apple_image)
+apple = Apple((0,0))
+golden_apple = GoldenApple((0,0))
 
 # init snake
 snake = Snake([(420,400),(400,400)],20,0)
 #               head      tail      x  y (init direction)
 
 # init apple
-apple = Apple(generate_apple_coords(), apple_image)
+apple = Apple(generate_apple_coords())
 
 # init golden apple
-golden_apple = GoldenApple(generate_golden_apple_coords(), golden_apple_image)
+golden_apple = GoldenApple(generate_golden_apple_coords())
 
 # eti
 # init best_score
@@ -929,7 +937,7 @@ while True:
     if snake_can_move:
         bomb_count += 1
         if bomb_count % 100 == 0:
-            bombs.append(Bomb(generate_bomb_coords(), bomb_image))
+            bombs.append(Bomb(generate_bomb_coords()))
 
         # spawn golden apple
         if bomb_count % 500 == 0:
@@ -942,7 +950,7 @@ while True:
             if golden_apple_count % 100 == 0:
                 del golden_apple
                 can_show_golden_apple = False
-                golden_apple = GoldenApple(generate_golden_apple_coords(), golden_apple_image)
+                golden_apple = GoldenApple(generate_golden_apple_coords())
 
     # show best_score
     if current_mode == "classic": 
@@ -969,10 +977,10 @@ while True:
 
         # reset apple
         del apple
-        apple = Apple(generate_apple_coords(), apple_image)
+        apple = Apple(generate_apple_coords())
 
         del golden_apple
-        golden_apple = GoldenApple(generate_golden_apple_coords(), golden_apple_image)
+        golden_apple = GoldenApple(generate_golden_apple_coords())
 
         # Write best_score inside a file
         try:
