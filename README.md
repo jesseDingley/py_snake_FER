@@ -5,10 +5,9 @@ Classic snake game developed in Python. Movement of snake controlled by facial e
 Classic snake game developed in Python. Movement of snake controlled by facial expressions. 
 
 ## Execution
-1. Create Python 3.8 environment
-2. Install necessary pacakges in **requirements.txt** (`pip install -r requirements.txt`)
-3. Run `python main_alt.py`
-You can now play the game.
+1. Create Python 3.8 environment.
+2. Install necessary pacakges in **requirements.txt** (`pip install -r requirements.txt`).
+3. Run `python main_alt.py` to play.
 
 ## How to play
 ### Change from "face" mode to "classic" mode and vice-versa
