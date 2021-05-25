@@ -17,9 +17,9 @@ Be happy to turn left. Be surprised to turn right.
 Press "quit"
 
 ## Objects in game
- - Apple: eat apples to earn 1 point. Every time you eat an Apple, a new one appears.
- - Golden Apple: appears rarely and for short periods of time. Eat golden apples to earn 5 points.
- - Bomb: If this option is selected, bombs will gradually appear on the field. Hit a bomb and you die.
+ - 🍎 <b>Apple</b>: eat apples to earn 1 point. Every time you eat an Apple, a new one appears.
+ - 🟡 🍎 <b>Golden Apple</b>: appears rarely and for short periods of time. Eat golden apples to earn 5 points.
+ - 💣 <b>Bomb</b>: If this option is selected, bombs will gradually appear on the field. Hit a bomb and you die.
 
 
 ## Files
