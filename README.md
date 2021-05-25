@@ -1,4 +1,4 @@
-# py_snake_facial_expressions
+# py_snake_FER
 Classic snake game developed in Python. Movement of snake controlled by either the keypad or by FER (Facial Emotion Recognition). 
 
 ## Execution
