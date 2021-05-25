@@ -1,8 +1,5 @@
 # py_snake_facial_expressions
-Classic snake game developed in Python. Movement of snake controlled by facial expressions. 
-
-# py_snake_facial_expressions
-Classic snake game developed in Python. Movement of snake controlled by facial expressions. 
+Classic snake game developed in Python. Movement of snake controlled by either the keypad or by FER (Facial Emotion Recognition). 
 
 ## Execution
 1. Create Python 3.8 environment.
@@ -15,7 +12,7 @@ While not playing, press "M : Classic" or "M : Face" to change from one mode to 
 ### Mode "classic"
 You can press "play" and use the keyboard's arrows to move the snake.
 ### Mode "face"
-Still in development (allows you to play snake with emotion recognition).
+Be happy to turn left. Be surprised to turn right.
 ### Quit the game
 Press "quit"
 
@@ -38,5 +35,5 @@ best_score.txt.dir
 
 ### Main file:
 ```bash
-main.py
+main_alt.py
 ```
