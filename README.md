@@ -2,8 +2,8 @@
 Classic snake game developed in Python. Movement of snake controlled by either the keypad or by FER (Facial Emotion Recognition). 
 
 ## Execution
-1. Create Python 3.8 environment.
-2. Install necessary pacakges in **requirements.txt** (`pip install -r requirements.txt`).
+1. Create Python 3.8 environment. (Using pyenv or anaconda).
+2. Inside the created Python environment, install necessary packages in **requirements.txt** with (`pip install -r requirements.txt`).
 3. Run `python main_alt.py` to play.
 
 ## How to play
